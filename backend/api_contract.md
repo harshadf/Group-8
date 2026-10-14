@@ -88,13 +88,11 @@ Returns the latest reading from the environmental sensors and values the backend
   "reading": {
     "humidity": 12.3,
     "temperature": 12.3,
-    "pressure": 12.2,
-    "light": 123
+    "pressure": 12.2
   },
   "conditions": {
     "temperature": "ok",
-    "humidity": "ok",
-    "light": "ok"
+    "humidity": "ok"
   },
   "watering": {
     "state": "due_soon",
@@ -156,13 +154,11 @@ Ranges longer than 7 days with `aggregate=none` return `400`. Use `hour`, `day`,
       "reading": {
         "humidity": 12.3,
         "temperature": 12.3,
-        "pressure": 12.3,
-        "light": 123
+        "pressure": 12.3
       },
       "conditions": {
         "temperature": "ok",
-        "humidity": "ok",
-        "light": "ok"
+        "humidity": "ok"
       },
       "watering": {
         "state": "due_soon",
@@ -204,8 +200,7 @@ Ranges longer than 7 days with `aggregate=none` return `400`. For aggregated rea
       "timestamp": "2026-10-05T14:38:12Z",
       "humidity": 12.3,
       "temperature": 12.3,
-      "pressure": 12.3,
-      "light": 123
+      "pressure": 12.3
     }
   ]
 }
@@ -230,8 +225,7 @@ Returns the plant types a user can choose between.
       "due_soon_hours": 12,
       "ranges": {
         "temperature": { "min": 18.0, "max": 27.0 },
-        "humidity": { "min": 40.0, "max": 70.0 },
-        "light": { "min": 200, "max": null }
+        "humidity": { "min": 40.0, "max": 70.0 }
       }
     }
   ]
@@ -291,7 +285,8 @@ A new plant is created on every call, even if the plant type is the same as the 
 
 ```json
 {
-  "plant_type": "Basil"
+  "plant_type": "Basil",
+  "nickname": "Cool plant"
 }
 ```
 
@@ -321,8 +316,7 @@ Returns the settings that apply to a plant. Settings are defined by the plant's 
   "due_soon_hours": 12,
   "ranges": {
     "temperature": { "min": 18.0, "max": 27.0 },
-    "humidity": { "min": 40.0, "max": 70.0 },
-    "light": { "min": 200, "max": null }
+    "humidity": { "min": 40.0, "max": 70.0 }
   }
 }
 ```
