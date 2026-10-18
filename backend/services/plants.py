@@ -30,7 +30,7 @@ def get_plant_by_id(db: Session, plant_id: Optional[int]) -> Optional[DBPlant]:
     return plant
 
 
-def create_plant(db: Session, plant_type_name: str) -> DBPlant:
+def create_plant(db: Session, plant_type_name: str, nickname: str) -> DBPlant:
     plant_type = (
         db.query(DBPlantType).filter(DBPlantType.name == plant_type_name).first()
     )
@@ -44,7 +44,7 @@ def create_plant(db: Session, plant_type_name: str) -> DBPlant:
     if active_plant:
         active_plant.ended_at = current_time
 
-    plant = DBPlant(plant_type_id=plant_type.id, started_at=current_time)
+    plant = DBPlant(plant_type_id=plant_type.id, nickname=nickname, started_at=current_time)
     db.add(plant)
     db.commit()
     db.refresh(plant)
