@@ -14,7 +14,6 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
 }) => {
   const [view, setView] = useState<'notice' | 'details'>(initialView);
 
-  // Sync state if initialView changes
   React.useEffect(() => {
     setView(initialView);
   }, [initialView, isOpen]);
@@ -25,7 +24,6 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
     try {
       localStorage.setItem('happyplant_privacy_ack', 'true');
     } catch {
-      // Ignore storage errors in restricted sandboxes
     }
     onClose();
   };

@@ -89,7 +89,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
       >
         {/* === FOLIAGE / STEMS === */}
         {mood === 'sleeping' ? (
-          // Sprout for "No plant monitored yet"
           <g>
             <path
               d="M 80 82 L 80 42"
@@ -109,7 +108,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
             />
           </g>
         ) : (
-          // Mature plant leaves (Monstera style)
           <g>
             {/* Main Central Stem */}
             <path
@@ -175,7 +173,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
 
         {/* === FACE EXPRESSIONS === */}
         {mood === 'healthy' && (
-          // Joyful & Peaceful: Happy curved eyes and smile
           <g>
             {/* Left Eye */}
             <path
@@ -205,7 +202,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
         )}
 
         {mood === 'sleeping' && (
-          // Sleepy / Serene: u u eyes
           <g>
             {/* Left Eye */}
             <path
@@ -232,7 +228,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
         )}
 
         {mood === 'unavailable' && (
-          // Worried / Neutral: small straight eyes & neutral mouth
           <g>
             <circle cx="69" cy="108" r="2.8" fill="#26170d" />
             <circle cx="91" cy="108" r="2.8" fill="#26170d" />
@@ -247,7 +242,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
         )}
 
         {mood === 'thirsty' && (
-          // Needs water: Small sad face + sweat drop
           <g>
             <circle cx="69" cy="108" r="2.8" fill="#26170d" />
             <circle cx="91" cy="108" r="2.8" fill="#26170d" />
@@ -267,7 +261,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
         )}
 
         {mood === 'cold' && (
-          // Freezing: Shivering mouth & cold blush
           <g>
             <circle cx="69" cy="108" r="2.8" fill="#26170d" />
             <circle cx="91" cy="108" r="2.8" fill="#26170d" />
@@ -285,7 +278,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
         )}
 
         {mood === 'hot' && (
-          // Hot: Flushed cheeks + sweat droplet
           <g>
             <path
               d="M 64 108 Q 69 104 74 108"
@@ -318,7 +310,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
         )}
 
         {mood === 'dry' && (
-          // Dry air: Neutral mouth, small dry marks
           <g>
             <circle cx="69" cy="108" r="2.8" fill="#26170d" />
             <circle cx="91" cy="108" r="2.8" fill="#26170d" />
@@ -335,7 +326,6 @@ export const PlantCharacter: React.FC<PlantCharacterProps> = ({ mood, className 
         )}
 
         {mood === 'humid' && (
-          // High humidity: Happy with dew droplets
           <g>
             <path
               d="M 64 108 Q 69 104 74 108"

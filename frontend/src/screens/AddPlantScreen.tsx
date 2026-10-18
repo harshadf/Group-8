@@ -49,7 +49,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
   },
   onPlantCreated,
 }) => {
-  // Form state
   const [selectedType, setSelectedType] = useState<string>('');
   const [nickname, setNickname] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,17 +56,14 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [prefilledNote, setPrefilledNote] = useState<string | null>(null);
 
-  // Available plant types from GET /api/plant-types (no mock data fallback)
   const [plantTypes, setPlantTypes] = useState<PlantTypeOption[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [typesError, setTypesError] = useState<string | null>(null);
 
-  // Saved plant records from GET /api/plants
   const [plantRecords, setPlantRecords] = useState<PlantRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(true);
   const [recordsError, setRecordsError] = useState<string | null>(null);
 
-  // 1. Fetch available plant types from GET /api/plant-types
   const fetchPlantTypes = useCallback(async () => {
     try {
       setLoadingTypes(true);
@@ -79,7 +75,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
       }
 
       const data = await res.json();
-      // Parse documented shape: { plant_types: [...] } with fallback to [...]
       const types: PlantTypeOption[] = Array.isArray(data?.plant_types)
         ? data.plant_types
         : Array.isArray(data)
@@ -92,13 +87,11 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
 
       setPlantTypes(types);
 
-      // Pre-select first plant type if none selected or if previously selected is invalid
       setSelectedType((prev) => {
         const match = types.some((t) => t.id === prev);
         return match ? prev : types[0].id;
       });
 
-      // Default nickname prefill if empty
       setNickname((prev) => (prev.trim() ? prev : `My ${types[0].name}`));
     } catch (err: unknown) {
       const msg =
@@ -110,7 +103,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
     }
   }, []);
 
-  // 2. Fetch plant records from GET /api/plants
   const fetchPlants = useCallback(async () => {
     try {
       setLoadingRecords(true);
@@ -122,7 +114,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
       }
 
       const data = await res.json();
-      // Parse documented shape: { plants: [...] } with fallback to [...]
       const records: PlantRecord[] = Array.isArray(data?.plants)
         ? data.plants
         : Array.isArray(data)
@@ -149,13 +140,11 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
     return plantTypes.find((p) => p.id === typeId)?.name || typeId;
   };
 
-  // Selecting a historical plant prefills the fields without reactivating the old record
   const handleSelectHistoricalPlant = (record: PlantRecord) => {
     if (record.plant_type) {
       setSelectedType(record.plant_type);
     }
 
-    // Inspect nickname field: when available reuse it, otherwise set an editable fallback
     if (record.nickname && record.nickname.trim()) {
       setNickname(record.nickname.trim());
       setPrefilledNote(
@@ -185,7 +174,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
       return;
     }
 
-    // Prompt for confirmation before replacing an active plant
     if (activePlant && activePlant.nickname) {
       setShowConfirmModal(true);
     } else {
@@ -229,7 +217,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
         });
       }
 
-      // Navigate to Dashboard displaying the newly active plant
       onNavigate('home');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'An error occurred while saving the plant.';
@@ -239,7 +226,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
     }
   };
 
-  // Group records into active and historical
   const activeRecords = plantRecords.filter((p) => p.is_active);
   const historicalRecords = plantRecords.filter((p) => !p.is_active);
 

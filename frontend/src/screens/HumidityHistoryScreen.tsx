@@ -12,7 +12,7 @@ export const HumidityHistoryScreen: React.FC<HumidityHistoryScreenProps> = ({
   onNavigate,
   activePlant,
 }) => {
-  const [timeRange, setTimeRange] = useState<'24h' | '7d'>('24h');
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
   const [readings, setReadings] = useState<NormalizedReading[]>([]);
 
   useEffect(() => {
@@ -21,10 +21,26 @@ export const HumidityHistoryScreen: React.FC<HumidityHistoryScreenProps> = ({
 
   const validHum = readings
     .filter((r) => r.humidity !== null)
-    .map((r) => ({
-      time: new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      humidity: r.humidity as number,
-    }));
+    .map((r) => {
+      const date = new Date(r.timestamp);
+
+      return {
+        time:
+          timeRange === '30d'
+            ? date.toLocaleDateString([], {
+              day: '2-digit',
+              month: '2-digit',
+            })
+            : date.toLocaleString([], {
+              day: '2-digit',
+              month: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+        humidity: r.humidity as number,
+      };
+    });
+
 
   const currentHum = validHum.length > 0 ? validHum[validHum.length - 1].humidity : null;
   const minHum = validHum.length > 0 ? Math.min(...validHum.map((d) => d.humidity)) : null;
@@ -63,23 +79,30 @@ export const HumidityHistoryScreen: React.FC<HumidityHistoryScreenProps> = ({
         <div className="flex items-center p-1 bg-[#e2ebd9] rounded-xl text-xs font-lexend">
           <button
             onClick={() => setTimeRange('24h')}
-            className={`px-2.5 py-1 rounded-lg cursor-pointer ${
-              timeRange === '24h'
-                ? 'bg-white text-[#203916] font-semibold shadow-xs'
-                : 'text-[#43483f]'
-            }`}
+            className={`px-2.5 py-1 rounded-lg cursor-pointer ${timeRange === '24h'
+              ? 'bg-white text-[#203916] font-semibold shadow-xs'
+              : 'text-[#43483f]'
+              }`}
           >
             24H
           </button>
           <button
             onClick={() => setTimeRange('7d')}
-            className={`px-2.5 py-1 rounded-lg cursor-pointer ${
-              timeRange === '7d'
-                ? 'bg-white text-[#203916] font-semibold shadow-xs'
-                : 'text-[#43483f]'
-            }`}
+            className={`px-2.5 py-1 rounded-lg cursor-pointer ${timeRange === '7d'
+              ? 'bg-white text-[#203916] font-semibold shadow-xs'
+              : 'text-[#43483f]'
+              }`}
           >
             7D
+          </button>
+          <button
+            onClick={() => setTimeRange('30d')}
+            className={`px-2.5 py-1 rounded-lg cursor-pointer ${timeRange === '30d'
+              ? 'bg-white text-[#203916] font-semibold shadow-xs'
+              : 'text-[#43483f]'
+              }`}
+          >
+            30D
           </button>
         </div>
       </div>
@@ -155,19 +178,18 @@ export const HumidityHistoryScreen: React.FC<HumidityHistoryScreenProps> = ({
           {validHum.length === 0 ? (
             <div className="p-4 text-xs text-[#5c6457]">No readings available from server.</div>
           ) : (
-            validHum.slice(-8).reverse().map((item, idx) => (
-              <div
-                key={idx}
-                className="px-4 py-2.5 flex items-center justify-between text-xs font-lexend"
-              >
-                <span className="text-[#5c6457]">{item.time}</span>
-                <span className="font-bold text-[#161e13] font-mono">
-                  {Math.round(item.humidity)}% RH
-                </span>
-                <span className="text-[11px] text-[#203916] bg-[#edf7e5] px-2 py-0.5 rounded-full">
-                  {item.humidity < 50 ? 'Dry' : item.humidity > 60 ? 'Humid' : 'Ideal'}
-                </span>
-              </div>
+            [...validHum].reverse().map((item, idx) => (<div
+              key={idx}
+              className="px-4 py-2.5 flex items-center justify-between text-xs font-lexend"
+            >
+              <span className="text-[#5c6457]">{item.time}</span>
+              <span className="font-bold text-[#161e13] font-mono">
+                {Math.round(item.humidity)}% RH
+              </span>
+              <span className="text-[11px] text-[#203916] bg-[#edf7e5] px-2 py-0.5 rounded-full">
+                {item.humidity < 50 ? 'Dry' : item.humidity > 60 ? 'Humid' : 'Ideal'}
+              </span>
+            </div>
             ))
           )}
         </div>

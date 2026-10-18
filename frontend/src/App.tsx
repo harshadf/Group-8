@@ -42,7 +42,6 @@ export default function App() {
         setPrivacyModalView('notice');
       }
     } catch {
-      // Safe fallback
     }
   }, []);
 

@@ -8,7 +8,6 @@ interface NavigationProps {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentScreen, onNavigate }) => {
-  // Screens where the xpath expects data-path='notifications' for Alerts tab
   const isNotificationScreen = [
     'home',
     'home-no-plant',
@@ -20,7 +19,6 @@ export const Navigation: React.FC<NavigationProps> = ({ currentScreen, onNavigat
     'dashboard-humidity-high',
   ].includes(currentScreen);
 
-  // Group active tabs:
   const isHomeActive = [
     'home',
     'home-no-plant',

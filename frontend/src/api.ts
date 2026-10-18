@@ -42,7 +42,7 @@ function toNumberOrNull(val: unknown): number | null {
   return null;
 }
 
-// Normalizza GET /api/plant-types: { plant_types: [{ name: "Basil", ... }] }
+
 export function normalizePlantTypes(data: any): PlantTypeOption[] {
   const raw = Array.isArray(data?.plant_types)
     ? data.plant_types
@@ -89,7 +89,6 @@ export async function fetchActivePlantFromApi(): Promise<ActivePlant | null> {
   }
 }
 
-// Usa GET /api/statuses (specifico della pianta attiva) con from, to e aggregate come da api_contract.md
 
 export async function fetchReadingsFromApi(range: string = '24h'): Promise<NormalizedReading[]> {
   try {
@@ -111,14 +110,12 @@ export async function fetchReadingsFromApi(range: string = '24h'): Promise<Norma
       aggregate,
     });
 
-    // 1. Prova a recuperare i dati da /api/statuses
     const statusListRes = await fetch(`/api/statuses?${params.toString()}`);
 
     if (statusListRes.ok) {
       const data = await statusListRes.json();
       const statuses = Array.isArray(data?.statuses) ? data.statuses : [];
 
-      // Usa statuses solo se contiene dati
       if (statuses.length > 0) {
         return [...statuses].reverse().map((s: any, idx: number) => ({
           id: idx,
@@ -131,8 +128,7 @@ export async function fetchReadingsFromApi(range: string = '24h'): Promise<Norma
       }
     }
 
-    // 2. Se statuses è vuoto o la richiesta fallisce,
-    // recupera le letture da /api/readings
+
     const readingsRes = await fetch(`/api/readings?${params.toString()}`);
 
     if (!readingsRes.ok) return [];
@@ -162,7 +158,6 @@ export async function fetchWateringEventsFromApi(): Promise<WateringEventRecord[
     const res = await fetch('/api/watering-events');
     if (!res.ok) return [];
     const data = await res.json();
-    // Nel contratto la chiave è "events"
     const list = Array.isArray(data?.events)
       ? data.events
       : Array.isArray(data?.watering_events)
@@ -180,7 +175,6 @@ export async function fetchWateringEventsFromApi(): Promise<WateringEventRecord[
   }
 }
 
-// POST /api/watering-events: tutti i campi nel body sono opzionali secondo api_contract.md
 export async function recordWateringToApi(): Promise<boolean> {
   const res = await fetch('/api/watering-events', {
     method: 'POST',
@@ -228,7 +222,6 @@ export async function fetchStatusFromApi(): Promise<NormalizedStatus> {
   const humMin = toNumberOrNull(rawSettings?.ranges?.humidity?.min) ?? 40;
   const humMax = toNumberOrNull(rawSettings?.ranges?.humidity?.max) ?? 70;
 
-  //const sensorOk = rawHealth?.sensor ? rawHealth.sensor === 'ok' : true;
   const sensorOk = rawHealth?.sensor ? true : true;
 
   const isOnline =
@@ -236,11 +229,9 @@ export async function fetchStatusFromApi(): Promise<NormalizedStatus> {
     rawStatus !== null &&
     (temperature !== null || humidity !== null || pressure !== null);
 
-  // watering.state può essere "ok", "due_soon", "due" o "unknown"
   const wateringState = String(wateringObj.state || 'unknown').toLowerCase();
   const wateringDue = wateringState === 'due' || wateringState === 'due_soon';
 
-  // conditions.temperature e conditions.humidity: "low", "ok", "high", "unknown"
   const tempCond = String(conditionsObj.temperature || 'ok').toLowerCase();
   const humCond = String(conditionsObj.humidity || 'ok').toLowerCase();
 
