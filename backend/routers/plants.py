@@ -14,6 +14,7 @@ def to_plant_response(plant: DBPlant) -> PlantResponse:
     return PlantResponse(
         id=plant.id,
         plant_type=plant.plant_type.name,
+        nickname=plant.nickname,
         started_at=plant.started_at,
         ended_at=plant.ended_at,
         active=plant.ended_at is None,
@@ -46,4 +47,4 @@ def get_plants(db: Session = Depends(get_db)):
 
 @router.post("/plants", response_model=PlantResponse, status_code=201)
 def create_plant(plant: PlantCreate, db: Session = Depends(get_db)):
-    return to_plant_response(plant_service.create_plant(db, plant.plant_type))
+    return to_plant_response(plant_service.create_plant(db, plant.plant_type, plant.nickname))
