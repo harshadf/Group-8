@@ -1,7 +1,9 @@
 version: '3.8'
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: fastapi_backend
     networks:
       - app-network
@@ -18,4 +20,4 @@ services:
 
 networks:
   app-network:
-    driver: bridge   
+    driver: bridge
