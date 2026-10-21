@@ -29,7 +29,7 @@ def save_readings_to_database(
     temperature: float, humidity: float, pressure: float, created_at: datetime
 ):
 
-    data = [temperature, humidity, pressure, created_at]
+    data = [temperature, humidity, pressure, created_at.isoformat(sep=" ")]
 
     cursor.execute(
         "INSERT INTO readings (temperature, humidity, pressure, created_at) VALUES (?, ?, ?, ?)",
@@ -58,7 +58,7 @@ def read_and_save_sensor_data() -> None:
     )
 
     logger.info(
-        "Saved reading: temp=%.2fÂ°C, humidity=%.2f%%, pressure=%.2f hPa, created_at=%s",
+        "Saved reading: temperature=%.2f°C, humidity=%.2f%%, pressure=%.2f hPa, created_at=%s",
         temperature,
         humidity,
         pressure,
