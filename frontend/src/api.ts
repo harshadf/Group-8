@@ -28,7 +28,7 @@ export interface NormalizedStatus {
 }
 
 export interface WateringEventRecord {
-  id: string | number;
+  id?: string | number; 
   watered_at: string;
   plant_id?: string | number;
   notes?: string;
@@ -45,7 +45,6 @@ function toNumberOrNull(val: unknown): number | null {
 export function toUtcIsoString(date: Date = new Date()): string {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
-
 
 export function ensureUtcIso(isoString: string | null | undefined): string | null {
   if (!isoString || typeof isoString !== 'string') return null;
@@ -105,7 +104,6 @@ export async function fetchActivePlantFromApi(): Promise<ActivePlant | null> {
     return null;
   }
 }
-
 export async function fetchReadingsFromApi(range: string = '24h'): Promise<NormalizedReading[]> {
   try {
     const now = new Date();
@@ -128,39 +126,22 @@ export async function fetchReadingsFromApi(range: string = '24h'): Promise<Norma
 
     const statusListRes = await fetch(`/api/statuses?${params.toString()}`);
 
-    if (statusListRes.ok) {
-      const data = await statusListRes.json();
-      const statuses = Array.isArray(data?.statuses) ? data.statuses : [];
+    if (!statusListRes.ok) return [];
 
-      if (statuses.length > 0) {
-        return [...statuses].reverse().map((s: any, idx: number) => ({
-          id: idx,
-          timestamp: ensureUtcIso(s.timestamp) ?? toUtcIsoString(),
-          temperature: toNumberOrNull(s.reading?.temperature),
-          humidity: toNumberOrNull(s.reading?.humidity),
-          pressure: toNumberOrNull(s.reading?.pressure),
-          soilMoisture: null,
-        }));
-      }
-    }
+    const data = await statusListRes.json();
+    const statuses = Array.isArray(data?.statuses) ? data.statuses : [];
 
-    const readingsRes = await fetch(`/api/readings?${params.toString()}`);
-
-    if (!readingsRes.ok) return [];
-
-    const readingsData = await readingsRes.json();
-    const readings = Array.isArray(readingsData?.readings) ? readingsData.readings : [];
-
-    return [...readings].reverse().map((r: any, idx: number) => ({
-      id: r.id ?? idx,
-      timestamp: ensureUtcIso(r.timestamp) ?? toUtcIsoString(),
-      temperature: toNumberOrNull(r.temperature),
-      humidity: toNumberOrNull(r.humidity),
-      pressure: toNumberOrNull(r.pressure),
+    return [...statuses].reverse().map((s: any) => ({
+      id: s.id,
+      timestamp: ensureUtcIso(s.timestamp) ?? "",
+      temperature: toNumberOrNull(s.reading?.temperature),
+      humidity: toNumberOrNull(s.reading?.humidity),
+      pressure: toNumberOrNull(s.reading?.pressure),
       soilMoisture: null,
     }));
+
   } catch (error) {
-    console.error('Error fetching historical readings:', error);
+    console.error('Error fetching historical statuses:', error);
     return [];
   }
 }
@@ -175,6 +156,7 @@ export async function fetchWateringEventsFromApi(
       from: toUtcIsoString(fromDate),
       to: toUtcIsoString(now),
     });
+    
     if (plantId !== undefined && plantId !== null) {
       params.set('plant_id', String(plantId));
     }
@@ -188,11 +170,11 @@ export async function fetchWateringEventsFromApi(
         ? data.watering_events
         : [];
 
-    return list.map((w: any, idx: number) => ({
-      id: w.id ?? idx,
-      watered_at: ensureUtcIso(w.timestamp || w.watered_at) ?? toUtcIsoString(),
+    return list.map((w: any) => ({
+      id: w.id,
+      watered_at: ensureUtcIso(w.timestamp || w.watered_at) ?? "",
       plant_id: w.plant_id,
-      notes: w.note || w.notes || (w.source ? `Logged via ${w.source}` : 'Watering recorded'),
+      notes: w.note || w.notes || (w.source ? `Logged via ${w.source}` : undefined),
     }));
   } catch {
     return [];
@@ -202,7 +184,7 @@ export async function fetchWateringEventsFromApi(
 export async function recordWateringToApi(note?: string): Promise<boolean> {
   const payload = {
     soil_condition: 'dry',
-    note: note && note.trim() !== '' ? note.trim() : 'Watered from HappyPlant dashboard',
+    note: note && note.trim() !== '' ? note.trim() : undefined, 
   };
 
   const res = await fetch('/api/watering-events', {
