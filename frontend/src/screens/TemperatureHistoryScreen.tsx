@@ -153,19 +153,7 @@ export const TemperatureHistoryScreen: React.FC<TemperatureHistoryScreenProps> =
         </div>
       </div>
 
-      <div className="bg-[#f4efe6]/70 border border-[#dce5d4] rounded-2xl p-4 mb-5 flex items-start gap-3">
-        <div className="w-8 h-8 rounded-full bg-[#edf7e5] text-[#203916] flex items-center justify-center shrink-0 mt-0.5">
-          <ShieldCheck className="w-4 h-4" />
-        </div>
-        <div>
-          <h4 className="font-lexend font-bold text-xs text-[#161e13] mb-0.5">
-            Live sensor history
-          </h4>
-          <p className="text-[11px] text-[#43483f] leading-relaxed">
-            Showing {validTemps.length} temperature readings retrieved from the backend.
-          </p>
-        </div>
-      </div>
+    
 
       <div>
         <h3 className="font-lexend font-bold text-sm text-[#161e13] mb-2.5">

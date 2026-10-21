@@ -10,11 +10,12 @@ from services import plants as plant_service
 router = APIRouter()
 
 
+
 def to_plant_response(plant: DBPlant) -> PlantResponse:
     return PlantResponse(
         id=plant.id,
         plant_type=plant.plant_type.name,
-        nickname=plant.nickname,
+        nickname=plant.nickname or plant.plant_type.name,
         started_at=plant.started_at,
         ended_at=plant.ended_at,
         active=plant.ended_at is None,
