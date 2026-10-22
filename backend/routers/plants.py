@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -8,7 +8,6 @@ from models.pydantic.plant_type import Ranges, PlantTypeResponse, PlantTypesResp
 from services import plants as plant_service
 
 router = APIRouter()
-
 
 
 def to_plant_response(plant: DBPlant) -> PlantResponse:
@@ -48,4 +47,12 @@ def get_plants(db: Session = Depends(get_db)):
 
 @router.post("/plants", response_model=PlantResponse, status_code=201)
 def create_plant(plant: PlantCreate, db: Session = Depends(get_db)):
-    return to_plant_response(plant_service.create_plant(db, plant.plant_type, plant.nickname))
+    return to_plant_response(
+        plant_service.create_plant(db, plant.plant_type, plant.nickname)
+    )
+
+
+@router.delete("/plants/{plant_id}", status_code=204)
+def delete_plant(plant_id: int, db: Session = Depends(get_db)):
+    plant_service.delete_plant(db=db, plant_id=plant_id)
+    return Response(status_code=204)
