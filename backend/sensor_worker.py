@@ -38,15 +38,17 @@ def save_readings_to_database(
     connection.commit()
 
 
-def read_and_save_sensor_data() -> None:
+def read_and_save_sensor_data(
+    temperature_offset: float, humidity_offset: float, pressure_offset: float
+) -> None:
     raw_temperature = sense.get_temperature()
-    temperature = raw_temperature + TEMPERATURE_OFFSET
+    temperature = raw_temperature + temperature_offset
 
     raw_humidity = sense.get_humidity()
-    humidity = raw_humidity + HUMIDITY_OFFSET
+    humidity = raw_humidity + humidity_offset
 
     raw_pressure = sense.get_pressure()
-    pressure = raw_pressure + PRESSURE_OFFSET
+    pressure = raw_pressure + pressure_offset
 
     created_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -73,7 +75,28 @@ def main():
         "--reading-interval-seconds",
         type=float,
         default=SAVE_READINGS_INTERVAL_SECONDS,
-        help="Interval between readings in seconds (default: 30)",
+        help="Interval between readings in seconds (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--temperature-offset",
+        type=float,
+        default=TEMPERATURE_OFFSET,
+        help="Offset added to the temperature reading (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--humidity-offset",
+        type=float,
+        default=HUMIDITY_OFFSET,
+        help="Offset added to the humidity reading (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--pressure-offset",
+        type=float,
+        default=PRESSURE_OFFSET,
+        help="Offset added to the pressure reading (default: %(default)s)",
     )
 
     args = parser.parse_args()
@@ -83,20 +106,28 @@ def main():
         parser.error("--reading-interval-seconds must be greater than 0")
 
     logger.info(
-        "Sensor recording worker started (interval=%s seconds)",
+        "Sensor recording worker started (interval=%s seconds, "
+        "temperature_offset=%s, humidity_offset=%s, pressure_offset=%s)",
         reading_interval_seconds,
+        args.temperature_offset,
+        args.humidity_offset,
+        args.pressure_offset,
     )
 
     while True:
         start_time = time.monotonic()
 
         try:
-            read_and_save_sensor_data()
+            read_and_save_sensor_data(
+                temperature_offset=args.temperature_offset,
+                humidity_offset=args.humidity_offset,
+                pressure_offset=args.pressure_offset,
+            )
         except Exception:
             logger.exception("Failed to read sensors or save readings")
 
         time_elapsed = time.monotonic() - start_time
-        time.sleep(max(0, SAVE_READINGS_INTERVAL_SECONDS - time_elapsed))
+        time.sleep(max(0, reading_interval_seconds - time_elapsed))
 
 
 if __name__ == "__main__":
