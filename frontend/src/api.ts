@@ -28,7 +28,7 @@ export interface NormalizedStatus {
 }
 
 export interface WateringEventRecord {
-  id: string | number;
+  id?: string | number; 
   watered_at: string;
   plant_id?: string | number;
   notes?: string;
@@ -42,6 +42,21 @@ function toNumberOrNull(val: unknown): number | null {
   return null;
 }
 
+export function toUtcIsoString(date: Date = new Date()): string {
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+export function ensureUtcIso(isoString: string | null | undefined): string | null {
+  if (!isoString || typeof isoString !== 'string') return null;
+  const trimmed = isoString.trim();
+  if (!trimmed) return null;
+
+  const withTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(trimmed) ? trimmed : `${trimmed}Z`;
+  const parsed = new Date(withTimezone);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+
+  return toUtcIsoString(parsed);
+}
 
 export function normalizePlantTypes(data: any): PlantTypeOption[] {
   const raw = Array.isArray(data?.plant_types)
@@ -79,17 +94,16 @@ export async function fetchActivePlantFromApi(): Promise<ActivePlant | null> {
 
     return {
       id: active.id,
-      nickname: active.nickname && active.nickname.trim() ? active.nickname.trim() : active.plant_type,
+      nickname:
+        active.nickname && active.nickname.trim() ? active.nickname.trim() : active.plant_type,
       plantType: active.plant_type,
       speciesName: active.plant_type,
-      startedAt: active.started_at,
+      startedAt: ensureUtcIso(active.started_at) ?? active.started_at,
     };
   } catch {
     return null;
   }
 }
-
-
 export async function fetchReadingsFromApi(range: string = '24h'): Promise<NormalizedReading[]> {
   try {
     const now = new Date();
@@ -105,57 +119,49 @@ export async function fetchReadingsFromApi(range: string = '24h'): Promise<Norma
     }
 
     const params = new URLSearchParams({
-      from: fromDate.toISOString(),
-      to: now.toISOString(),
+      from: toUtcIsoString(fromDate),
+      to: toUtcIsoString(now),
       aggregate,
     });
 
     const statusListRes = await fetch(`/api/statuses?${params.toString()}`);
 
-    if (statusListRes.ok) {
-      const data = await statusListRes.json();
-      const statuses = Array.isArray(data?.statuses) ? data.statuses : [];
+    if (!statusListRes.ok) return [];
 
-      if (statuses.length > 0) {
-        return [...statuses].reverse().map((s: any, idx: number) => ({
-          id: idx,
-          timestamp: s.timestamp,
-          temperature: toNumberOrNull(s.reading?.temperature),
-          humidity: toNumberOrNull(s.reading?.humidity),
-          pressure: toNumberOrNull(s.reading?.pressure),
-          soilMoisture: null,
-        }));
-      }
-    }
+    const data = await statusListRes.json();
+    const statuses = Array.isArray(data?.statuses) ? data.statuses : [];
 
-
-    const readingsRes = await fetch(`/api/readings?${params.toString()}`);
-
-    if (!readingsRes.ok) return [];
-
-    const readingsData = await readingsRes.json();
-    const readings = Array.isArray(readingsData?.readings)
-      ? readingsData.readings
-      : [];
-
-    return [...readings].reverse().map((r: any, idx: number) => ({
-      id: r.id ?? idx,
-      timestamp: r.timestamp,
-      temperature: toNumberOrNull(r.temperature),
-      humidity: toNumberOrNull(r.humidity),
-      pressure: toNumberOrNull(r.pressure),
+    return [...statuses].reverse().map((s: any) => ({
+      id: s.id,
+      timestamp: ensureUtcIso(s.timestamp) ?? "",
+      temperature: toNumberOrNull(s.reading?.temperature),
+      humidity: toNumberOrNull(s.reading?.humidity),
+      pressure: toNumberOrNull(s.reading?.pressure),
       soilMoisture: null,
     }));
+
   } catch (error) {
-    console.error('Error fetching historical readings:', error);
+    console.error('Error fetching historical statuses:', error);
     return [];
   }
 }
 
-
-export async function fetchWateringEventsFromApi(): Promise<WateringEventRecord[]> {
+export async function fetchWateringEventsFromApi(
+  plantId?: number | string
+): Promise<WateringEventRecord[]> {
   try {
-    const res = await fetch('/api/watering-events');
+    const now = new Date();
+    const fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const params = new URLSearchParams({
+      from: toUtcIsoString(fromDate),
+      to: toUtcIsoString(now),
+    });
+    
+    if (plantId !== undefined && plantId !== null) {
+      params.set('plant_id', String(plantId));
+    }
+
+    const res = await fetch(`/api/watering-events?${params.toString()}`);
     if (!res.ok) return [];
     const data = await res.json();
     const list = Array.isArray(data?.events)
@@ -164,25 +170,27 @@ export async function fetchWateringEventsFromApi(): Promise<WateringEventRecord[
         ? data.watering_events
         : [];
 
-    return list.map((w: any, idx: number) => ({
-      id: w.id ?? idx,
-      watered_at: w.timestamp || w.watered_at || new Date().toISOString(),
+    return list.map((w: any) => ({
+      id: w.id,
+      watered_at: ensureUtcIso(w.timestamp || w.watered_at) ?? "",
       plant_id: w.plant_id,
-      notes: w.note || w.notes || (w.source ? `Logged via ${w.source}` : 'Watering recorded'),
+      notes: w.note || w.notes || (w.source ? `Logged via ${w.source}` : undefined),
     }));
   } catch {
     return [];
   }
 }
 
-export async function recordWateringToApi(): Promise<boolean> {
+export async function recordWateringToApi(note?: string): Promise<boolean> {
+  const payload = {
+    soil_condition: 'dry',
+    note: note && note.trim() !== '' ? note.trim() : undefined, 
+  };
+
   const res = await fetch('/api/watering-events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      soil_condition: 'dry',
-      note: 'Watered from HappyPlant dashboard',
-    }),
+    body: JSON.stringify(payload),
   });
   return res.ok;
 }
@@ -222,7 +230,7 @@ export async function fetchStatusFromApi(): Promise<NormalizedStatus> {
   const humMin = toNumberOrNull(rawSettings?.ranges?.humidity?.min) ?? 40;
   const humMax = toNumberOrNull(rawSettings?.ranges?.humidity?.max) ?? 70;
 
-  const sensorOk = rawHealth?.sensor ? true : true;
+  const sensorOk = true;
 
   const isOnline =
     sensorOk &&
@@ -280,15 +288,16 @@ export async function fetchStatusFromApi(): Promise<NormalizedStatus> {
     tempRange: { min: tempMin, max: tempMax },
     humidityRange: { min: humMin, max: humMax },
     wateringDue,
-    lastWateredAt: wateringObj.last_watered || null,
-    lastSyncedAt: rawStatus?.timestamp || rawHealth?.last_reading_at || null,
+    lastWateredAt: ensureUtcIso(wateringObj.last_watered),
+    lastSyncedAt: ensureUtcIso(rawStatus?.timestamp || rawHealth?.last_reading_at),
   };
 }
 
 export function formatRelativeTime(isoString: string | null | undefined): string {
-  if (!isoString) return 'No record yet';
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return isoString;
+  const normalized = ensureUtcIso(isoString);
+  if (!normalized) return 'No record yet';
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return String(isoString);
   const diffMs = Date.now() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 1) return 'Just now';

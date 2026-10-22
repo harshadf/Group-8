@@ -75,11 +75,16 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
       }
 
       const data = await res.json();
-      const types: PlantTypeOption[] = Array.isArray(data?.plant_types)
+      const rawTypes = Array.isArray(data?.plant_types)
         ? data.plant_types
         : Array.isArray(data)
           ? data
           : [];
+
+      const types: PlantTypeOption[] = rawTypes.map((t: any) => ({
+        id: t.id || t.name,
+        name: t.name || t.id
+      }));
 
       if (types.length === 0) {
         throw new Error('No plant types returned by the backend.');
@@ -420,15 +425,15 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
                     key={plant.id}
                     onClick={() => setSelectedType(plant.id)}
                     className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
-                        ? 'bg-[#edf7e5] border-[#203916] shadow-xs'
-                        : 'bg-white/70 border-[#dce5d4] hover:bg-white'
+                      ? 'bg-[#edf7e5] border-[#203916] shadow-xs'
+                      : 'bg-white/70 border-[#dce5d4] hover:bg-white'
                       }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isSelected
-                            ? 'bg-[#203916] text-white'
-                            : 'bg-[#e2ebd9] text-[#203916]'
+                          ? 'bg-[#203916] text-white'
+                          : 'bg-[#e2ebd9] text-[#203916]'
                           }`}
                       >
                         <Leaf className="w-5 h-5" />

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Bell, Sliders, Flower2 } from 'lucide-react';
 import { Screen } from '../types.ts';
+import { fetchStatusFromApi } from '../api.ts'; 
 
 interface NavigationProps {
   currentScreen: Screen;
@@ -8,6 +9,27 @@ interface NavigationProps {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentScreen, onNavigate }) => {
+  const [hasAlerts, setHasAlerts] = useState(false);
+
+  useEffect(() => {
+    const checkAlerts = async () => {
+      const status = await fetchStatusFromApi().catch(() => null);
+      if (!status) return;
+
+      const alertsExist = 
+        !status.isOnline ||
+        status.wateringDue ||
+        (status.temperature !== null && (status.temperature < status.tempRange.min || status.temperature > status.tempRange.max)) ||
+        (status.humidity !== null && (status.humidity < status.humidityRange.min || status.humidity > status.humidityRange.max));
+        
+      setHasAlerts(alertsExist);
+    };
+
+    checkAlerts();
+    const intervalId = setInterval(checkAlerts, 5000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   const isNotificationScreen = [
     'home',
     'home-no-plant',
@@ -102,13 +124,14 @@ export const Navigation: React.FC<NavigationProps> = ({ currentScreen, onNavigat
         >
           <div className="w-6 h-6 flex items-center justify-center mb-0.5 relative">
             <Bell className="w-5 h-5" strokeWidth={isAlertsActive ? 2.5 : 2} />
-            {/* Soft badge indicator */}
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#f39c42]" />
+            {hasAlerts && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#f39c42]" />
+            )}
           </div>
           <span className="text-[12px] font-lexend tracking-tight">Alerts</span>
         </a>
 
-        {/* Hidden alias anchor to guarantee xpath query matches either alerts or notifications */}
+        {/* Hidden alias anchor */}
         <a
           href="#alerts-alias"
           data-path={isNotificationScreen ? 'alerts' : 'notifications'}

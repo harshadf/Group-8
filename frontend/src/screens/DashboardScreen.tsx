@@ -26,6 +26,8 @@ interface DashboardScreenProps {
   onOnlineStatusChange?: (online: boolean) => void;
 }
 
+
+
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   screen,
   onNavigate,
@@ -37,23 +39,55 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [statusData, setStatusData] = useState<NormalizedStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const [showWateringModal, setShowWateringModal] = useState(false);
+  const [wateringNote, setWateringNote] = useState('');
+
   const loadDashboardData = useCallback(async () => {
-    setLoading(true);
-    const data = await fetchStatusFromApi();
-    setStatusData(data);
-    if (onOnlineStatusChange) {
-      onOnlineStatusChange(data.isOnline);
+    try {
+      const data = await fetchStatusFromApi();
+      setStatusData(data);
+
+      if (onOnlineStatusChange) {
+        onOnlineStatusChange(data.isOnline);
+      }
+    } catch (error) {
+      console.error('Error updating dashboard:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [onOnlineStatusChange]);
 
   useEffect(() => {
-    loadDashboardData();
+    let isMounted = true;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const pollDashboard = async () => {
+      await loadDashboardData();
+
+      if (isMounted) {
+        timeoutId = setTimeout(pollDashboard, 5000);
+      }
+    };
+
+    pollDashboard();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [loadDashboardData, activePlant]);
 
-  const handleRecordWatering = async () => {
+  const handleOpenWateringModal = () => {
+    setWateringNote('');
+    setShowWateringModal(true);
+  };
+
+  const confirmRecordWatering = async () => {
+    setShowWateringModal(false);
     setIsRecordingWater(true);
-    const ok = await recordWateringToApi().catch(() => false);
+
+    const ok = await recordWateringToApi(wateringNote).catch(() => false);
+
     setIsRecordingWater(false);
     if (ok) {
       setWateredToast(true);
@@ -250,7 +284,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       </p>
 
       <button
-        onClick={handleRecordWatering}
+        onClick={handleOpenWateringModal}
         disabled={isRecordingWater}
         className="w-full h-13 bg-[#203916] hover:bg-[#2e4f20] text-white rounded-full font-lexend font-semibold text-sm flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition-all mb-3 cursor-pointer disabled:opacity-60"
       >
@@ -297,6 +331,47 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         pressure={pressureProps}
         onNavigate={onNavigate}
       />
+
+      {/* Watering Modal */}
+      {showWateringModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="max-w-sm w-full bg-[#f3fceb] border border-[#dce5d4] rounded-3xl p-6 shadow-xl space-y-4">
+            <h3 className="font-lexend font-bold text-lg text-[#161e13]">
+              Record Watering
+            </h3>
+            <p className="text-xs text-[#43483f]">
+              Add a short note about the plant's condition (optional).
+            </p>
+            <textarea
+              value={wateringNote}
+              onChange={(e) => setWateringNote(e.target.value)}
+              maxLength={200} 
+              rows={3}
+              placeholder="e.g. Added liquid fertilizer, soil was very dry..."
+              className="w-full p-3 rounded-xl bg-white border border-[#c4c8bc] font-sans text-sm text-[#161e13] focus:outline-none focus:ring-2 focus:ring-[#203916] resize-none"
+            />
+            <div className="text-right text-[10px] text-[#5c6457]">
+              {wateringNote.length}/200
+            </div>
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={confirmRecordWatering}
+                disabled={isRecordingWater}
+                className="w-full h-12 bg-[#203916] hover:bg-[#2e4f20] text-white rounded-full font-lexend font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+              >
+                Save Watering
+              </button>
+              <button
+                onClick={() => setShowWateringModal(false)}
+                disabled={isRecordingWater}
+                className="w-full h-10 bg-transparent hover:bg-[#e2ebd9] text-[#161e13] rounded-full font-lexend font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
