@@ -44,8 +44,19 @@ def create_plant(db: Session, plant_type_name: str, nickname: str) -> DBPlant:
     if active_plant:
         active_plant.ended_at = current_time
 
-    plant = DBPlant(plant_type_id=plant_type.id, nickname=nickname, started_at=current_time)
+    plant = DBPlant(
+        plant_type_id=plant_type.id, nickname=nickname, started_at=current_time
+    )
     db.add(plant)
     db.commit()
     db.refresh(plant)
     return plant
+
+
+def delete_plant(db: Session, plant_id: int) -> None:
+    plant = db.get(DBPlant, plant_id)
+    if not plant:
+        raise APIError(404, "not_found", f"Plant with id {plant_id} does not exist")
+
+    db.delete(plant)
+    db.commit()
