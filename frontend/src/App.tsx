@@ -130,6 +130,9 @@ export default function App() {
           <SettingsScreen
             onNavigate={handleNavigate}
             activePlant={activePlant}
+            onPlantDeleted={() => {
+              void loadActivePlant();
+            }}
             onOpenDataInfo={() => {
               setPrivacyModalView('details');
               setShowPrivacyModal(true);
