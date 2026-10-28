@@ -22,6 +22,11 @@ export const AlertsScreen: React.FC<AlertsScreenProps> = ({ onNavigate, activePl
   const plantName = activePlant?.nickname || 'Your plant';
 
   useEffect(() => {
+    if (!activePlant) {
+      setAlerts([]);
+      return;
+    }
+
     fetchStatusFromApi().then((status) => {
       const list: DynamicAlert[] = [];
       const timeLabel = formatRelativeTime(status.lastSyncedAt);
@@ -87,7 +92,7 @@ export const AlertsScreen: React.FC<AlertsScreenProps> = ({ onNavigate, activePl
 
       setAlerts(list);
     });
-  }, [plantName]);
+  }, [activePlant, plantName]);
 
   return (
     <main className="max-w-md mx-auto px-4 pt-4 pb-24">
@@ -102,7 +107,9 @@ export const AlertsScreen: React.FC<AlertsScreenProps> = ({ onNavigate, activePl
             <CheckCircle2 className="w-10 h-10 text-[#83bd75] mx-auto mb-2" />
             <h4 className="font-lexend font-bold text-sm text-[#161e13]">No active alerts</h4>
             <p className="text-xs text-[#43483f] mt-1">
-              {plantName} is happy and all sensor readings are within target bands.
+              {!activePlant
+                ? "No plant is currently being monitored."
+                : `${plantName} is happy and all sensor readings are within target bands.`}
             </p>
           </div>
         ) : (
@@ -114,15 +121,14 @@ export const AlertsScreen: React.FC<AlertsScreenProps> = ({ onNavigate, activePl
             >
               <div className="flex items-start gap-3">
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                    alert.type === 'water'
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${alert.type === 'water'
                       ? 'bg-[#ffdcbc] text-[#683d00]'
                       : alert.type === 'temp'
-                      ? 'bg-[#b6ebfb] text-[#134d5b]'
-                      : alert.type === 'humidity'
-                      ? 'bg-[#ffdcbc] text-[#683d00]'
-                      : 'bg-[#edf7e5] text-[#203916]'
-                  }`}
+                        ? 'bg-[#b6ebfb] text-[#134d5b]'
+                        : alert.type === 'humidity'
+                          ? 'bg-[#ffdcbc] text-[#683d00]'
+                          : 'bg-[#edf7e5] text-[#203916]'
+                    }`}
                 >
                   {alert.type === 'water' && <Droplet className="w-4 h-4 fill-current" />}
                   {alert.type === 'temp' && <Thermometer className="w-4 h-4" />}

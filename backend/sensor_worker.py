@@ -4,6 +4,10 @@ import logging
 import argparse
 
 from datetime import datetime, timezone
+
+#When using the emulator use
+#from sense_emu import SenseHat
+
 from sense_hat import SenseHat
 
 SAVE_READINGS_INTERVAL_SECONDS = 30

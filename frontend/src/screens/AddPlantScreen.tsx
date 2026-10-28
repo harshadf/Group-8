@@ -42,11 +42,7 @@ function formatMonitoringDates(startedAt: string, endedAt: string | null): strin
 
 export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
   onNavigate,
-  activePlant = {
-    nickname: 'Barnaby',
-    plantType: 'monstera',
-    speciesName: 'Monstera Deliciosa',
-  },
+  activePlant,
   onPlantCreated,
 }) => {
   const [selectedType, setSelectedType] = useState<string>('');
@@ -236,7 +232,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
 
   return (
     <main className="max-w-md mx-auto px-4 pt-3 pb-24">
-      {/* Top Header with Back Navigation */}
       <div className="flex items-center gap-3 mb-4">
         <a
           href="#settings"
@@ -254,7 +249,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
         </h1>
       </div>
 
-      {/* Error Message banner if submission failed (preserves user inputs) */}
       {errorMessage && (
         <div className="mb-4 p-3.5 bg-[#ffdad6] border border-[#ffb4ab] text-[#93000a] rounded-2xl text-xs font-lexend flex items-start gap-2 animate-in fade-in">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -262,7 +256,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
         </div>
       )}
 
-      {/* Prefilled informative note */}
       {prefilledNote && (
         <div className="mb-4 p-3.5 bg-[#edf7e5] border border-[#ccecba] text-[#082103] rounded-2xl text-xs font-lexend flex items-start justify-between gap-2 animate-in fade-in">
           <div className="flex items-start gap-2">
@@ -279,7 +272,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
         </div>
       )}
 
-      {/* Saved Plants Section */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
@@ -315,7 +307,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
           </div>
         ) : (
           <div className="space-y-2.5">
-            {/* Clearly distinguished active plant */}
             {activeRecords.map((active) => (
               <div
                 key={active.id}
@@ -340,7 +331,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
               </div>
             ))}
 
-            {/* Historical plants as reusable starting points */}
             {historicalRecords.map((historical) => {
               const hasNickname = Boolean(historical.nickname && historical.nickname.trim());
               return (
@@ -382,7 +372,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
       </div>
 
       <form onSubmit={handleStartMonitoringClick}>
-        {/* Plant Type Selector */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-2">
             <label className="block font-lexend font-bold text-sm text-[#161e13]">
@@ -454,7 +443,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
           )}
         </div>
 
-        {/* Nickname Input (Editable by user) */}
         <div className="mb-6">
           <label
             htmlFor="plant-nickname-input"
@@ -476,7 +464,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
           </span>
         </div>
 
-        {/* Primary Action Button with exact ID */}
         <div>
           <button
             type="submit"
@@ -499,7 +486,6 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
         </div>
       </form>
 
-      {/* Confirmation Modal when replacing active plant */}
       {showConfirmModal && (
         <div
           role="dialog"
