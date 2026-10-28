@@ -152,7 +152,7 @@ export const AtmosphericPressureScreen: React.FC<AtmosphericPressureScreenProps>
         </div>
       </div>
 
-    
+
 
       <div>
         <h3 className="font-lexend font-bold text-sm text-[#161e13] mb-2.5">Pressure Log</h3>

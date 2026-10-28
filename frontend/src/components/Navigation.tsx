@@ -16,6 +16,12 @@ export const Navigation: React.FC<NavigationProps> = ({ currentScreen, onNavigat
       const status = await fetchStatusFromApi().catch(() => null);
       if (!status) return;
 
+      // SE NON C'È UNA PIANTA ATTIVA, NON CI SONO ALLARMI.
+      if (!status.hasActivePlant) {
+        setHasAlerts(false);
+        return;
+      }
+
       const alertsExist = 
         !status.isOnline ||
         status.wateringDue ||
