@@ -6,6 +6,7 @@ Base = declarative_base()
 
 class PlantType(Base):
     __tablename__ = "plant_types"
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, unique=True)
@@ -19,6 +20,7 @@ class PlantType(Base):
 
 class Plant(Base):
     __tablename__ = "plants"
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id = Column(Integer, primary_key=True, index=True)
     plant_type_id = Column(Integer, ForeignKey("plant_types.id"), nullable=False)
@@ -27,10 +29,12 @@ class Plant(Base):
     ended_at = Column(DateTime)
 
     plant_type = relationship("PlantType")
+    watering_events = relationship("WateringEvent", cascade="all, delete-orphan")
 
 
 class Reading(Base):
     __tablename__ = "readings"
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id = Column(Integer, primary_key=True, index=True)
     temperature = Column(Float)
@@ -41,6 +45,7 @@ class Reading(Base):
 
 class WateringEvent(Base):
     __tablename__ = "watering_events"
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id = Column(Integer, primary_key=True, index=True)
     plant_id = Column(Integer, ForeignKey("plants.id"), nullable=False, index=True)
