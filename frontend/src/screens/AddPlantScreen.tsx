@@ -25,15 +25,18 @@ function formatMonitoringDates(startedAt: string, endedAt: string | null): strin
       month: 'short',
       year: 'numeric',
     });
+
     if (!endedAt) {
       return `Started ${startStr} · Currently Active`;
     }
+
     const end = new Date(endedAt);
     const endStr = end.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
+
     return `Monitored ${startStr} – ${endStr}`;
   } catch {
     return 'Previous monitoring record';
@@ -66,11 +69,13 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
       setTypesError(null);
 
       const res = await fetch('/api/plant-types');
+
       if (!res.ok) {
         throw new Error(`Failed to load plant types (HTTP ${res.status})`);
       }
 
       const data = await res.json();
+
       const rawTypes = Array.isArray(data?.plant_types)
         ? data.plant_types
         : Array.isArray(data)
@@ -79,7 +84,7 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
 
       const types: PlantTypeOption[] = rawTypes.map((t: any) => ({
         id: t.id || t.name,
-        name: t.name || t.id
+        name: t.name || t.id,
       }));
 
       if (types.length === 0) {
@@ -92,11 +97,12 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
         const match = types.some((t) => t.id === prev);
         return match ? prev : types[0].id;
       });
-
-      setNickname((prev) => (prev.trim() ? prev : `My ${types[0].name}`));
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : 'Unable to retrieve plant types from server.';
+        err instanceof Error
+          ? err.message
+          : 'Unable to retrieve plant types from server.';
+
       setTypesError(msg);
       setPlantTypes([]);
     } finally {
@@ -110,11 +116,15 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
       setRecordsError(null);
 
       const res = await fetch('/api/plants');
+
       if (!res.ok) {
-        throw new Error(`Failed to retrieve plant records (HTTP ${res.status})`);
+        throw new Error(
+          `Failed to retrieve plant records (HTTP ${res.status})`
+        );
       }
 
       const data = await res.json();
+
       const records: PlantRecord[] = Array.isArray(data?.plants)
         ? data.plants
         : Array.isArray(data)
@@ -124,7 +134,10 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
       setPlantRecords(records);
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : 'Unable to retrieve saved plant records.';
+        err instanceof Error
+          ? err.message
+          : 'Unable to retrieve saved plant records.';
+
       setRecordsError(msg);
       setPlantRecords([]);
     } finally {
@@ -148,14 +161,15 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
 
     if (record.nickname && record.nickname.trim()) {
       setNickname(record.nickname.trim());
+
       setPrefilledNote(
         `Prefilled plant type "${getSpeciesName(record.plant_type)}" and nickname "${record.nickname.trim()}". Starting monitoring creates a fresh record.`
       );
     } else {
-      const fallbackName = `New ${getSpeciesName(record.plant_type)}`;
-      setNickname(fallbackName);
+      setNickname('');
+
       setPrefilledNote(
-        `Prefilled plant type "${getSpeciesName(record.plant_type)}". (No nickname was stored in this historical record—feel free to edit).`
+        `Prefilled plant type "${getSpeciesName(record.plant_type)}". No nickname was stored in this historical record, so please enter one.`
       );
     }
   };
@@ -170,6 +184,7 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
     }
 
     const trimmed = nickname.trim();
+
     if (!trimmed) {
       setErrorMessage('Please enter a plant nickname.');
       return;
@@ -203,7 +218,11 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed to start monitoring plant (HTTP ${response.status}).`);
+
+        throw new Error(
+          errorData.error ||
+          `Failed to start monitoring plant (HTTP ${response.status}).`
+        );
       }
 
       const created = await response.json();
@@ -220,7 +239,11 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
 
       onNavigate('home');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'An error occurred while saving the plant.';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'An error occurred while saving the plant.';
+
       setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
@@ -244,6 +267,7 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
         >
           <ArrowLeft className="w-5 h-5" />
         </a>
+
         <h1 className="font-lexend font-bold text-2xl text-[#161e13] leading-tight">
           Add a New Plant
         </h1>
@@ -262,6 +286,7 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
             <Sparkles className="w-4 h-4 text-[#203916] shrink-0 mt-0.5" />
             <span>{prefilledNote}</span>
           </div>
+
           <button
             type="button"
             onClick={() => setPrefilledNote(null)}
@@ -280,6 +305,7 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
               Saved &amp; Historical Plants
             </h2>
           </div>
+
           {recordsError && (
             <button
               type="button"
@@ -317,22 +343,31 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
                     <span className="font-lexend font-bold text-sm text-[#161e13]">
                       {active.nickname || 'Unnamed Plant'}
                     </span>
+
                     <span className="text-xs text-[#43483f]">
                       · {getSpeciesName(active.plant_type)}
                     </span>
                   </div>
+
                   <span className="px-2 py-0.5 rounded-full bg-[#203916] text-white text-[10px] font-lexend font-semibold">
                     Currently Active
                   </span>
                 </div>
+
                 <div className="text-[11px] text-[#5c6457]">
-                  {formatMonitoringDates(active.started_at, active.ended_at)}
+                  {formatMonitoringDates(
+                    active.started_at,
+                    active.ended_at
+                  )}
                 </div>
               </div>
             ))}
 
             {historicalRecords.map((historical) => {
-              const hasNickname = Boolean(historical.nickname && historical.nickname.trim());
+              const hasNickname = Boolean(
+                historical.nickname && historical.nickname.trim()
+              );
+
               return (
                 <div
                   key={historical.id}
@@ -342,16 +377,24 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-lexend font-bold text-xs text-[#161e13]">
-                          {hasNickname ? historical.nickname : 'No nickname recorded'}
+                          {hasNickname
+                            ? historical.nickname
+                            : 'No nickname recorded'}
                         </span>
+
                         <span className="text-xs text-[#43483f]">
                           · {getSpeciesName(historical.plant_type)}
                         </span>
                       </div>
+
                       <div className="text-[11px] text-[#5c6457] mt-0.5">
-                        {formatMonitoringDates(historical.started_at, historical.ended_at)}
+                        {formatMonitoringDates(
+                          historical.started_at,
+                          historical.ended_at
+                        )}
                       </div>
                     </div>
+
                     <span className="px-2 py-0.5 rounded-full bg-[#e2ebd9] text-[#203916] text-[10px] font-lexend font-semibold shrink-0">
                       Historical
                     </span>
@@ -377,6 +420,7 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
             <label className="block font-lexend font-bold text-sm text-[#161e13]">
               Select Plant Type
             </label>
+
             {typesError && (
               <button
                 type="button"
@@ -396,9 +440,12 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
           ) : typesError ? (
             <div className="p-3.5 rounded-2xl bg-[#fff5ea] border border-[#ffdcbc] text-xs text-[#683d00] flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+
               <div>
                 <p className="font-semibold">{typesError}</p>
-                <p className="mt-1 text-[11px]">Cannot proceed without valid plant types from the server.</p>
+                <p className="mt-1 text-[11px]">
+                  Cannot proceed without valid plant types from the server.
+                </p>
               </div>
             </div>
           ) : plantTypes.length === 0 ? (
@@ -409,28 +456,31 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
             <div className="space-y-2">
               {plantTypes.map((plant) => {
                 const isSelected = selectedType === plant.id;
+
                 return (
                   <div
                     key={plant.id}
                     onClick={() => setSelectedType(plant.id)}
                     className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
-                      ? 'bg-[#edf7e5] border-[#203916] shadow-xs'
-                      : 'bg-white/70 border-[#dce5d4] hover:bg-white'
+                        ? 'bg-[#edf7e5] border-[#203916] shadow-xs'
+                        : 'bg-white/70 border-[#dce5d4] hover:bg-white'
                       }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isSelected
-                          ? 'bg-[#203916] text-white'
-                          : 'bg-[#e2ebd9] text-[#203916]'
+                            ? 'bg-[#203916] text-white'
+                            : 'bg-[#e2ebd9] text-[#203916]'
                           }`}
                       >
                         <Leaf className="w-5 h-5" />
                       </div>
+
                       <span className="font-lexend font-semibold text-sm text-[#161e13]">
                         {plant.name}
                       </span>
                     </div>
+
                     {isSelected && (
                       <span className="px-2 py-0.5 rounded-full bg-[#ccecba] text-[#082103] text-[10px] font-lexend font-semibold flex items-center gap-1">
                         <Check className="w-3 h-3" /> Selected
@@ -450,6 +500,7 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
           >
             Plant Nickname
           </label>
+
           <input
             id="plant-nickname-input"
             type="text"
@@ -459,8 +510,10 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
             className="w-full h-12 px-3.5 rounded-xl bg-white border border-[#c4c8bc] font-lexend text-sm text-[#161e13] focus:outline-none focus:ring-2 focus:ring-[#203916] disabled:opacity-50"
             placeholder="e.g. Living room Monstera"
           />
+
           <span className="block text-[11px] text-[#5c6457] mt-1.5">
-            You can customize or enter a new nickname for this monitoring session.
+            You can customize or enter a new nickname for this monitoring
+            session.
           </span>
         </div>
 
@@ -468,7 +521,12 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
           <button
             type="submit"
             id="btn-start-monitoring"
-            disabled={isSubmitting || loadingTypes || plantTypes.length === 0 || !selectedType}
+            disabled={
+              isSubmitting ||
+              loadingTypes ||
+              plantTypes.length === 0 ||
+              !selectedType
+            }
             className="w-full h-14 bg-[#203916] hover:bg-[#2e4f20] text-white rounded-full font-lexend font-semibold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
@@ -500,10 +558,14 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
             >
               Replace active plant?
             </h3>
+
             <p className="text-xs text-[#43483f] leading-relaxed">
               Starting monitoring will end the current active session for{' '}
-              <strong>{activePlant?.nickname || 'the active plant'}</strong> and start a new monitoring record for <strong>{nickname.trim()}</strong>.
+              <strong>{activePlant?.nickname || 'the active plant'}</strong>{' '}
+              and start a new monitoring record for{' '}
+              <strong>{nickname.trim()}</strong>.
             </p>
+
             <div className="space-y-2 pt-2">
               <button
                 type="button"
@@ -520,6 +582,7 @@ export const AddPlantScreen: React.FC<AddPlantScreenProps> = ({
                   <span>Confirm &amp; Start Monitoring</span>
                 )}
               </button>
+
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
