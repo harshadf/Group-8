@@ -21,8 +21,22 @@ export const AtmosphericPressureScreen: React.FC<AtmosphericPressureScreenProps>
 
   const validPress = readings
     .filter((r) => r.pressure !== null)
-    .map((r) => {
+    .map((r, index, arr) => {
       const date = new Date(r.timestamp);
+      const currentP = r.pressure as number;
+      const prevP = index > 0 ? (arr[index - 1].pressure as number) : currentP;
+      const diff = currentP - prevP;
+
+      let trend = 'Steady';
+      let trendClass = 'text-[#203916] bg-[#edf7e5]';
+
+      if (diff >= 1) {
+        trend = 'Rising';
+        trendClass = 'text-[#316573] bg-[#ebf6fa]';
+      } else if (diff <= -1) {
+        trend = 'Falling';
+        trendClass = 'text-[#683d00] bg-[#ffdcbc]';
+      }
 
       return {
         time:
@@ -37,14 +51,17 @@ export const AtmosphericPressureScreen: React.FC<AtmosphericPressureScreenProps>
               hour: '2-digit',
               minute: '2-digit',
             }),
-        pressure: r.pressure as number,
+        pressure: currentP,
+        trend,
+        trendClass,
       };
     });
 
+  const latestReading = validPress.length > 0 ? validPress[validPress.length - 1] : null;
+  const currentPress = latestReading ? latestReading.pressure : null;
+  const currentTrend = latestReading ? latestReading.trend : 'Steady';
+  const currentTrendClass = latestReading ? latestReading.trendClass : 'text-[#683d00] bg-[#ffdcbc]';
 
-
-
-  const currentPress = validPress.length > 0 ? validPress[validPress.length - 1].pressure : null;
   const minPress = validPress.length > 0 ? Math.min(...validPress.map((d) => d.pressure)) : null;
   const maxPress = validPress.length > 0 ? Math.max(...validPress.map((d) => d.pressure)) : null;
 
@@ -117,19 +134,14 @@ export const AtmosphericPressureScreen: React.FC<AtmosphericPressureScreenProps>
               <span className="text-3xl font-lexend font-bold text-[#161e13]">
                 {currentPress !== null ? `${Math.round(currentPress)} hPa` : '--'}
               </span>
-              <span className="text-xs font-lexend text-[#683d00] bg-[#ffdcbc] px-2 py-0.5 rounded-full font-semibold">
-                Stable
+              <span className={`text-xs font-lexend px-2 py-0.5 rounded-full font-semibold ${currentTrendClass}`}>
+                {currentTrend}
               </span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-2xl bg-[#fff5ea] text-[#e89a3c] flex items-center justify-center">
             <Gauge className="w-5 h-5" />
           </div>
-        </div>
-
-        <div className="bg-[#edf7e5] rounded-xl p-3 flex items-center justify-between text-xs mb-4">
-          <span className="text-[#43483f] font-lexend">Standard Sea-Level Baseline</span>
-          <span className="font-lexend font-bold text-[#203916]">1013.25 hPa</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#e8f1df] text-center">
@@ -141,7 +153,7 @@ export const AtmosphericPressureScreen: React.FC<AtmosphericPressureScreenProps>
           </div>
           <div>
             <span className="block text-[10px] text-[#5c6457]">Baro Trend</span>
-            <span className="font-lexend font-bold text-xs text-[#161e13]">Steady</span>
+            <span className="font-lexend font-bold text-xs text-[#161e13]">{currentTrend}</span>
           </div>
           <div>
             <span className="block text-[10px] text-[#5c6457]">Max</span>
@@ -151,8 +163,6 @@ export const AtmosphericPressureScreen: React.FC<AtmosphericPressureScreenProps>
           </div>
         </div>
       </div>
-
-
 
       <div>
         <h3 className="font-lexend font-bold text-sm text-[#161e13] mb-2.5">Pressure Log</h3>
@@ -168,8 +178,8 @@ export const AtmosphericPressureScreen: React.FC<AtmosphericPressureScreenProps>
               <span className="font-bold text-[#161e13] font-mono">
                 {Math.round(item.pressure)} hPa
               </span>
-              <span className="text-[11px] text-[#203916] bg-[#edf7e5] px-2 py-0.5 rounded-full">
-                Stable
+              <span className={`text-[11px] px-2 py-0.5 rounded-full ${item.trendClass}`}>
+                {item.trend}
               </span>
             </div>
             ))

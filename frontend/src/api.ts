@@ -28,7 +28,7 @@ export interface NormalizedStatus {
 }
 
 export interface WateringEventRecord {
-  id?: string | number; 
+  id?: string | number;
   watered_at: string;
   plant_id?: string | number;
   notes?: string;
@@ -104,7 +104,10 @@ export async function fetchActivePlantFromApi(): Promise<ActivePlant | null> {
     return null;
   }
 }
-export async function fetchReadingsFromApi(range: string = '24h'): Promise<NormalizedReading[]> {
+export async function fetchReadingsFromApi(
+  range: string = '24h',
+  plantId?: number | string
+): Promise<NormalizedReading[]> {
   try {
     const now = new Date();
     let fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -123,6 +126,10 @@ export async function fetchReadingsFromApi(range: string = '24h'): Promise<Norma
       to: toUtcIsoString(now),
       aggregate,
     });
+
+    if (plantId !== undefined && plantId !== null) {
+      params.set('plant_id', String(plantId));
+    }
 
     const statusListRes = await fetch(`/api/statuses?${params.toString()}`);
 
@@ -156,7 +163,7 @@ export async function fetchWateringEventsFromApi(
       from: toUtcIsoString(fromDate),
       to: toUtcIsoString(now),
     });
-    
+
     if (plantId !== undefined && plantId !== null) {
       params.set('plant_id', String(plantId));
     }
@@ -174,7 +181,7 @@ export async function fetchWateringEventsFromApi(
       id: w.id,
       watered_at: ensureUtcIso(w.timestamp || w.watered_at) ?? "",
       plant_id: w.plant_id,
-      notes: w.note || w.notes || (w.source ? `Logged via ${w.source}` : undefined),
+      notes: w.note || w.notes || (w.source ? `Watering event recorded` : undefined),
     }));
   } catch {
     return [];
@@ -184,7 +191,7 @@ export async function fetchWateringEventsFromApi(
 export async function recordWateringToApi(note?: string): Promise<boolean> {
   const payload = {
     soil_condition: 'dry',
-    note: note && note.trim() !== '' ? note.trim() : undefined, 
+    note: note && note.trim() !== '' ? note.trim() : undefined,
   };
 
   const res = await fetch('/api/watering-events', {

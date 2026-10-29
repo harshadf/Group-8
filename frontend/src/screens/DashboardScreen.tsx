@@ -15,6 +15,7 @@ import { MetricCards } from '../components/MetricCards.tsx';
 import {
   fetchStatusFromApi,
   recordWateringToApi,
+  fetchReadingsFromApi,
   NormalizedStatus,
   formatRelativeTime,
 } from '../api.ts';
@@ -26,8 +27,6 @@ interface DashboardScreenProps {
   onOnlineStatusChange?: (online: boolean) => void;
 }
 
-
-
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   screen,
   onNavigate,
@@ -38,6 +37,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [isRecordingWater, setIsRecordingWater] = useState(false);
   const [statusData, setStatusData] = useState<NormalizedStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [pressureTrend, setPressureTrend] = useState('Stable');
 
   const [showWateringModal, setShowWateringModal] = useState(false);
   const [wateringNote, setWateringNote] = useState('');
@@ -50,12 +50,36 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       if (onOnlineStatusChange) {
         onOnlineStatusChange(data.isOnline);
       }
+
+      if (data.isOnline) {
+        const readings = await fetchReadingsFromApi('24h', activePlant?.id);
+        const validPress = readings.filter((r) => r.pressure !== null);
+
+        if (validPress.length >= 2) {
+          const currentP = validPress[validPress.length - 1].pressure as number;
+          const prevP = validPress[validPress.length - 2].pressure as number;
+          const diff = currentP - prevP;
+
+          if (diff >= 1) {
+            setPressureTrend('Rising');
+          } else if (diff <= -1) {
+            setPressureTrend('Falling');
+          } else {
+            setPressureTrend('Stable');
+          }
+        }
+      }
     } catch (error) {
-      console.error('Error updating dashboard:', error);
     } finally {
       setLoading(false);
     }
-  }, [onOnlineStatusChange]);
+  }, [onOnlineStatusChange, activePlant?.id]);
+
+  useEffect(() => {
+    setStatusData(null);
+    setLoading(true);
+    setPressureTrend('Stable');
+  }, [activePlant?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -181,7 +205,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         <MetricCards
           temperature={{ status: 'Unavailable', value: '--', isWarning: false }}
           humidity={{ status: 'Unavailable', value: '--', isWarning: false }}
-          pressure={{ status: '--', value: 'Unavailable' }}
+          pressure={{ status: 'Unavailable', value: '--' }}
           onNavigate={onNavigate}
         />
       </main>
@@ -194,34 +218,78 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const humMin = statusData?.humidityRange.min ?? 50;
   const humMax = statusData?.humidityRange.max ?? 60;
 
+  const isCold =
+    statusData?.temperature !== null &&
+    statusData?.temperature !== undefined &&
+    statusData.temperature < tempMin;
+
+  const isHot =
+    statusData?.temperature !== null &&
+    statusData?.temperature !== undefined &&
+    statusData.temperature > tempMax;
+
+  const isDry =
+    statusData?.humidity !== null &&
+    statusData?.humidity !== undefined &&
+    statusData.humidity < humMin;
+
+  const isHumid =
+    statusData?.humidity !== null &&
+    statusData?.humidity !== undefined &&
+    statusData.humidity > humMax;
+
+  const isWateringDue = Boolean(statusData?.wateringDue);
+
+  const careNotes: { title: string; text: string }[] = [];
+
+  if (isCold) {
+    careNotes.push({
+      title: 'Gentle care note',
+      text: 'Keep away from drafty windows or cold airflow to maintain warmth.',
+    });
+  } else if (isHot) {
+    careNotes.push({
+      title: 'Care Suggestion',
+      text: 'Consider increasing room ventilation or moving out of direct sun.',
+    });
+  }
+
+  if (isDry) {
+    careNotes.push({
+      title: 'Air moisture note',
+      text: 'Room air is dry. A gentle room humidifier or misting nearby can help.',
+    });
+  } else if (isHumid) {
+    careNotes.push({
+      title: 'Care Suggestion',
+      text: 'Stagnant moist air can encourage mold. Consider opening a window for gentle airflow.',
+    });
+  }
+
+  const totalIssues =
+    (isWateringDue ? 1 : 0) + (isCold || isHot ? 1 : 0) + (isDry || isHumid ? 1 : 0);
+
   let title = `${plantName} is thriving`;
   let subtitle = 'All environmental readings are in the sweet spot.';
-  let careNoteTitle: string | null = null;
-  let careNoteText: string | null = null;
 
-  if (mood === 'thirsty') {
+  if (totalIssues > 1) {
+    title = 'Multiple care alerts detected';
+    subtitle = 'Several environmental conditions require your attention.';
+  } else if (isWateringDue) {
     title = 'Your plant needs water';
     subtitle = 'Soil moisture is low and ready for a drink.';
-  } else if (mood === 'cold') {
+  } else if (isCold) {
     title = 'The room feels too cold';
     subtitle = `Current temperature is below the recommended ${tempMin}°C band.`;
-    careNoteTitle = 'Gentle care note';
-    careNoteText = 'Keep away from drafty windows or cold airflow to maintain warmth.';
-  } else if (mood === 'hot') {
+  } else if (isHot) {
     title = 'The room is too warm';
     subtitle = `Current temperature is above the comfortable ${tempMax}°C band.`;
-    careNoteTitle = 'Care Suggestion';
-    careNoteText = 'Consider increasing room ventilation or moving out of direct sun.';
-  } else if (mood === 'dry') {
+  } else if (isDry) {
     title = 'Air humidity is too dry';
     subtitle = `Ambient moisture is below the healthy ${humMin}% range.`;
-    careNoteTitle = 'Air moisture note';
-    careNoteText = 'Room air is dry. A gentle room humidifier or misting nearby can help.';
-  } else if (mood === 'humid') {
+  } else if (isHumid) {
     title = 'Air humidity is very high';
     subtitle = `Ambient moisture is above the comfortable ${humMax}% range.`;
-    careNoteTitle = 'Care Suggestion';
-    careNoteText = 'Stagnant moist air can encourage mold. Consider opening a window for gentle airflow.';
   }
 
   const tempVal =
@@ -241,24 +309,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     status: statusData?.tempStatus || 'Looks good',
     value: tempVal,
     subtext: `(${tempMin}°C - ${tempMax}°C)`,
-    isWarning: mood === 'cold' || mood === 'hot',
-    isCold: mood === 'cold',
-    isHot: mood === 'hot',
+    isWarning: isCold || isHot,
+    isCold,
+    isHot,
   };
 
   const humidityProps = {
     status: statusData?.humidityStatus || 'Looks good',
     value: humVal,
-    subtext: `Band ${humMin}% - ${humMax}%`,
-    isWarning: mood === 'dry' || mood === 'humid',
-    isDry: mood === 'dry',
-    isHumid: mood === 'humid',
+    subtext: `(${humMin}% - ${humMax}%)`,
+    isWarning: isDry || isHumid,
+    isDry,
+    isHumid,
   };
 
   const pressureProps = {
     value: pressVal,
-    status: statusData?.pressureStatus || 'Stable',
-    subtext: 'Steady baro',
+    status: statusData?.pressure === null || statusData?.pressure === undefined ? 'Unavailable' : pressureTrend,
   };
 
   const lastWateredText = statusData?.lastWateredAt
@@ -303,19 +370,22 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
       )}
 
-      {careNoteTitle && careNoteText && (
-        <div className="w-full bg-[#f4efe6]/80 border border-[#dce5d4] rounded-2xl p-3.5 mb-3.5 flex items-start gap-2.5">
+      {careNotes.map((note, index) => (
+        <div
+          key={index}
+          className="w-full bg-[#f4efe6]/80 border border-[#dce5d4] rounded-2xl p-3.5 mb-3.5 flex items-start gap-2.5"
+        >
           <div className="w-7 h-7 rounded-full bg-[#e2ebd9] flex items-center justify-center text-[#203916] shrink-0 mt-0.5">
             <Wind className="w-3.5 h-3.5" />
           </div>
           <div>
             <h4 className="font-lexend font-bold text-xs text-[#161e13] mb-0.5">
-              {careNoteTitle}
+              {note.title}
             </h4>
-            <p className="text-[11px] text-[#43483f] leading-relaxed">{careNoteText}</p>
+            <p className="text-[11px] text-[#43483f] leading-relaxed">{note.text}</p>
           </div>
         </div>
-      )}
+      ))}
 
       <div className="flex items-center gap-1.5 text-[11px] text-[#5c6457] mb-5">
         <Droplet className="w-3 h-3 text-[#316573]" />
@@ -332,7 +402,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         onNavigate={onNavigate}
       />
 
-      {/* Watering Modal */}
       {showWateringModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="max-w-sm w-full bg-[#f3fceb] border border-[#dce5d4] rounded-3xl p-6 shadow-xl space-y-4">
@@ -345,7 +414,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <textarea
               value={wateringNote}
               onChange={(e) => setWateringNote(e.target.value)}
-              maxLength={200} 
+              maxLength={200}
               rows={3}
               placeholder="e.g. Added liquid fertilizer, soil was very dry..."
               className="w-full p-3 rounded-xl bg-white border border-[#c4c8bc] font-sans text-sm text-[#161e13] focus:outline-none focus:ring-2 focus:ring-[#203916] resize-none"

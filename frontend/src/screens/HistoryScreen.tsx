@@ -20,9 +20,44 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate, active
   const [waterings, setWaterings] = useState<WateringEventRecord[]>([]);
 
   useEffect(() => {
-    fetchReadingsFromApi(timeRange).then(setReadings);
-    fetchWateringEventsFromApi().then(setWaterings);
-  }, [timeRange]);
+    let isMounted = true;
+    let intervalId: ReturnType<typeof setInterval>;
+
+    const loadHistoryData = async () => {
+      if (activePlant?.id === undefined || activePlant?.id === null) {
+        if (isMounted) {
+          setReadings([]);
+          setWaterings([]);
+        }
+        return;
+      }
+
+      try {
+        const [newReadings, newWaterings] = await Promise.all([
+          fetchReadingsFromApi(timeRange, activePlant.id),
+          fetchWateringEventsFromApi(activePlant.id)
+        ]);
+
+        if (isMounted) {
+          setReadings(newReadings);
+          setWaterings(newWaterings);
+        }
+      } catch (error) {
+        console.error('Error fetching history data:', error);
+      }
+    };
+
+    setReadings([]);
+    setWaterings([]);
+    loadHistoryData();
+
+    intervalId = setInterval(loadHistoryData, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [timeRange, activePlant?.id]);
 
   const latest = readings.length > 0 ? readings[readings.length - 1] : null;
   const recentSlice = readings.slice(-12);
@@ -43,11 +78,10 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate, active
             <button
               key={range}
               onClick={() => setTimeRange(range)}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                timeRange === range
-                  ? 'bg-white text-[#203916] font-semibold shadow-xs'
-                  : 'text-[#43483f] hover:text-[#161e13]'
-              }`}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${timeRange === range
+                ? 'bg-white text-[#203916] font-semibold shadow-xs'
+                : 'text-[#43483f] hover:text-[#161e13]'
+                }`}
             >
               {range.toUpperCase()}
             </button>
@@ -73,7 +107,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate, active
                 <span className="font-lexend font-bold text-sm text-[#161e13] block">
                   Temperature History
                 </span>
-                <span className="text-[11px] text-[#5c6457]">Optimal 18°C – 24°C</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -116,7 +149,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate, active
                 <span className="font-lexend font-bold text-sm text-[#161e13] block">
                   Humidity History
                 </span>
-                <span className="text-[11px] text-[#5c6457]">Healthy 50% – 60%</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -159,7 +191,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate, active
                 <span className="font-lexend font-bold text-sm text-[#161e13] block">
                   Atmospheric pressure History
                 </span>
-                <span className="text-[11px] text-[#5c6457]">Barometric stability</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -174,8 +205,8 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate, active
           <div className="h-6 w-full flex items-end gap-1 px-1 pt-1 opacity-80">
             {(recentSlice.length > 0
               ? recentSlice.map((r) =>
-                  Math.min(100, Math.max(20, (((r.pressure ?? 1013) - 980) / 60) * 100))
-                )
+                Math.min(100, Math.max(20, (((r.pressure ?? 1013) - 980) / 60) * 100))
+              )
               : [60, 60, 62, 61, 62, 63, 62, 62, 61, 62, 62, 62]
             ).map((val, idx) => (
               <div
@@ -214,9 +245,11 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate, active
                       {formatRelativeTime(event.watered_at)}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#43483f] mt-0.5">
-                    {event.notes || 'Watering event recorded.'}
-                  </p>
+                  {event.notes && (
+                    <p className="text-[11px] text-[#43483f] mt-0.5">
+                      {event.notes}
+                    </p>
+                  )}
                 </div>
               </div>
             ))
